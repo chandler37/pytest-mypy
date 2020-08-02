@@ -144,7 +144,8 @@ class MypyItem(pytest.Item):
         full exception repr.
         """
         if excinfo.errisinstance(MypyError):
-            return excinfo.value.args[0]
+            return '\n'.join(
+                f'{self.config.invocation_dir.bestrelpath(self.fspath)}:{line}' for line in excinfo.value.args[0].splitlines())
         return super().repr_failure(excinfo)
 
 
@@ -212,13 +213,14 @@ def _cached_json_results(results_path, results_factory=None):
     with FileLock(results_path + '.lock'):
         try:
             with open(results_path, mode='r') as results_f:
-                results = json.load(results_f)
+                return json.load(results_f)
         except FileNotFoundError:
             if not results_factory:
                 raise
-            results = results_factory()
-            with open(results_path, mode='w') as results_f:
-                json.dump(results, results_f)
+            pass
+    results = results_factory()
+    with open(results_path, mode='w') as results_f:
+        json.dump(results, results_f)
     return results
 
 
